@@ -5,14 +5,15 @@
 #include "execution.h"
 
 void execute(char **args){
-    int pid, status;
+    int pid;
     pid = fork();
     if (pid < 0){
         printf("error forking...");
     }else if(pid == 0){
         //child
         execvp(*args, args);
-        _exit(0);            
+        perror(*args);
+        _exit(1);            
     }else{
         //parent
         wait(&status);

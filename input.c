@@ -2,13 +2,13 @@
 #include <string.h>
 #include "input.h"
 
-void get_input(){
+int get_input(){
    fgets(input, MAX_INPUT, stdin);
    //Substitute '\n' character with NULL
    *(strchr(input, '\n')) = '\0';
    int c = split_commands(input);
-   printf("Commands inserted: %d\n", c);
    //parse_command(input, args);
+   return c;
 }
 
 int split_commands(char *buf){
@@ -22,12 +22,6 @@ int split_commands(char *buf){
       *delim++ = '\0';
       commands[i++] = delim;
       delim = search_delimiter(delim);
-   }
-   for(int j=0; j < i; j++){
-     printf("Command: %s\n", commands[j]);
-   }
-   for(int j=0; j < i-1; j++){
-      printf("Delim: %d\n", delimiters[j]);
    }
    return i;
 }
