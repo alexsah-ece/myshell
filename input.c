@@ -2,13 +2,11 @@
 #include <string.h>
 #include "input.h"
 
-int get_input(){
+void get_input(){
    fgets(input, MAX_INPUT, stdin);
    //Substitute '\n' character with NULL
    *(strchr(input, '\n')) = '\0';
-   int c = split_commands(input);
-   //parse_command(input, args);
-   return c;
+   return;
 }
 
 int split_commands(char *buf){
@@ -35,11 +33,6 @@ void add_delimiter(char c, int n){
       case ';':
          delim = SEMICOLON;
          break;
-      case '>':
-         delim = BIGGER_THAN;
-         break;
-      case '<':
-         delim = LESS_THAN;
    }
    delimiters[n] = delim;
 }
@@ -48,29 +41,48 @@ char* search_delimiter(char *buf){
    char *delim[5];
    delim[0] = strstr(buf, "&&");
    delim[1] = strchr(buf, ';');
-   delim[2] = strchr(buf, '>');
-   delim[3] = strchr(buf, '<');
    char *first = delim[0];
-   for(int i=1; i < 4; i++)
+   for(int i=1; i < 2; i++)
      if((delim[i] < first) && (delim[i] != NULL) || (first == NULL)) first = delim[i];
    return first; 
 }
 
 void parse_command(char *buf, char **args){
    int i=0, j=0;
-   while ((buf[i] != '\0') && (buf[i] != '\n')){
+   while ((buf[i] != '\0')){
       /*
       * Strip whitespace. Use nulls, so
       * that the previous argument is terminated
       * automatically.
       */
-      while ((buf[i] == ' ') || (buf[i] == '\t') || (buf[i] == '\n')) buf[i++] = '\0';
+      while ((buf[i] == ' ') || (buf[i] == '\t')){
+         buf[i++] = '\0'; 
+      }
+      //if it is the end of string, don't save it at all
+      if(buf[i] == '\0'){
+         break;
+      }
       //Save the argument.
       args[j++] = buf + i;
       //Skip over the argument.
-      while ((buf[i] != '\0') && (buf[i] != ' ') && (buf[i] != '\t') && (buf[i] != '\n')) i++;
+      while ((buf[i] != '\0') && (buf[i] != ' ') && (buf[i] != '\t')){
+         i++;
+      }
    }
    args[j] = NULL;
    j = 0;
    //while (args[j] != NULL) printf("%s\n", args[j++]);
+}
+
+char* extract_filename(char* buf){
+   int i=0, j;
+   //search for first letter of filename, skipping the whitespace
+   while (buf[i] == ' ' || buf[i] == '\t') i++;
+   //save the position
+   j = i;
+   //skip over the filename until first whitespace or null is reached
+   while ((buf[i] != '\0') && (buf[i] != ' ') && (buf[i] != '\t') && (buf[i] != '\n')) i++;
+   //use null for the first whitespace character so it can be terminated automatically
+   buf[i] = '\0';
+   return (buf + j);
 }

@@ -12,8 +12,9 @@ enum delimiter delimiters[512];
 
 void add_delimiter(char, int);
 int split_commands(char *);
-int get_input(void);
+void get_input(void);
 void parse_command(char *, char **);
 char* search_delimiter(char *);
+char* extract_filename(char*);
 
 #endif
