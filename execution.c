@@ -7,9 +7,9 @@
 #include "parse.h"
 
 
-void execute_line(char *input){
+int execute_line(char *input){
    if (strcmp(input, "quit") == 0){
-      return;
+      return 1;
    }
    int delim_count = split_commands(input) - 1;
    for(int i=-1; i < delim_count; i++){
@@ -19,6 +19,7 @@ void execute_line(char *input){
          if ((delimiters[i] == 1 && status == 0) || delimiters[i] == 0) execute_command(commands[i+1]);
       }
    }
+   return 0;
 }
 
 void execute_command(char* commands){

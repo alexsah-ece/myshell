@@ -3,7 +3,7 @@
 
 int status;
 
-void execute_line(char *);
+int execute_line(char *);
 void execute_command(char*);
 void execute(char **);
 void execute_input_redirect(char **, char *);

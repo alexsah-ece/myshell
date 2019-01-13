@@ -16,7 +16,8 @@ void run(char* filename){
          char* c = (strchr(input, '\n'));
          if (c != NULL) *c = '\0';
 
-         execute_line(input);  
+         //execute line (if quit was inserted, run() returns)
+         if (execute_line(input)) return;  
       }
    }else{
       FILE *fptr;
@@ -25,12 +26,14 @@ void run(char* filename){
          printf("No such file or directory\n");
       }else{
          while(1){
-            if(fgets(input, MAX_INPUT, fptr) == NULL) break;
+            //read line (if EOF is reached, run() returns)
+            if(fgets(input, MAX_INPUT, fptr) == NULL) return;
             
             //Substitute '\n' character with NULL
             char* c = (strchr(input, '\n'));
             if (c != NULL) *c = '\0';
 
+            //execute line (if quit was inserted, run() returns)
             execute_line(input);
          }
       }
