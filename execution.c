@@ -7,6 +7,11 @@
 #include "parse.h"
 
 
+/* Executes a line consisting of commands,
+ * seperated by ";" and "&&". If "quit" was
+ * inserted, it returns 1. Otherwise, it
+ * executes the commands and returns 0.
+ */
 int execute_line(char *input){
    if (strcmp(input, "quit") == 0){
       return 1;
@@ -22,6 +27,9 @@ int execute_line(char *input){
    return 0;
 }
 
+/* Executes a single command. Input and output
+ * redirection is implemented, using an extra check.
+ */
 void execute_command(char* commands){
    char *x = strchr(commands, '>');
    if(x!= NULL){
@@ -41,6 +49,10 @@ void execute_command(char* commands){
    execute(args);
 }
 
+/* Executes a simple command, through creating
+ * a child process. Syntax error detection is
+ * enabled with perror() and _exit()
+ */ 
 void execute(char **args){
     int pid;
     pid = fork();
@@ -57,6 +69,11 @@ void execute(char **args){
     }
 }
 
+/* Executes an input redirection command. 
+ * Follows the logic of execute(), with the
+ * exception of redirecting a command's 
+ * input to a file.
+ */ 
 void execute_input_redirect(char **args, char *filename){
     int pid;
     pid = fork();
@@ -78,6 +95,11 @@ void execute_input_redirect(char **args, char *filename){
     }
 }
 
+/* Executes an output redirection command. 
+ * Follows the logic of execute(), with the
+ * exception of redirecting a command's 
+ * output to a file.
+ */ 
 void execute_output_redirect(char **args, char *filename){
     int pid;
     pid = fork();

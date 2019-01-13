@@ -6,8 +6,13 @@
 
 char input[512];
 
+/* Detects the mode {interactive, batch},
+ * reads the input and executes the commands
+ * with the help of execut_line()
+ */
 void run(char* filename){
    if (filename == '\0'){
+      //interactive mode
       while(1){
          printf("sahinis_8906> ");
          fgets(input, MAX_INPUT, stdin);
@@ -20,6 +25,7 @@ void run(char* filename){
          if (execute_line(input)) return;  
       }
    }else{
+      //batch mode
       FILE *fptr;
       fptr = fopen(filename, "r");
       if(fptr == NULL){
@@ -34,8 +40,7 @@ void run(char* filename){
             if (c != NULL) *c = '\0';
 
             //execute line (if quit was inserted, run() returns)
-            execute_line(input);
-         }
+            if (execute_line(input)) return;           }
       }
    }
 }

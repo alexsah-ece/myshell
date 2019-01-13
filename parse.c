@@ -3,6 +3,12 @@
 #include "parse.h"
 
 
+/* Takes as input a char buffer and splits
+ * it to one or more commands, based on the
+ * detection of ";" and "&&". Every command
+ * is stored to the commands[256] array. It
+ * returns the number of commands to be executed.
+ */
 int split_commands(char *buf){
    char *delim;
    *commands = buf;
@@ -10,14 +16,19 @@ int split_commands(char *buf){
    delim = search_delimiter(buf);
    while (delim != NULL){
       add_delimiter(*delim, i-1);
+
+      //split the command, using null character.
       if (*delim == '&') *delim++ = '\0';
       *delim++ = '\0';
+
       commands[i++] = delim;
       delim = search_delimiter(delim);
    }
    return i;
 }
 
+/* Adds a delimiter to the delimiters[512] array
+ */
 void add_delimiter(char c, int n){
    enum delimiter delim;
    switch(c){
@@ -31,6 +42,10 @@ void add_delimiter(char c, int n){
    delimiters[n] = delim;
 }
 
+/* Searches for the ";" and "&&" delimiters, in a given
+ * buffer. It returns a pointer to the first occurence
+ * of a delimiter, or null if none is present.
+ */
 char* search_delimiter(char *buf){
    char *delim[2];
    delim[0] = strstr(buf, "&&");
@@ -38,6 +53,11 @@ char* search_delimiter(char *buf){
    return ((delim[1] < delim[0] && delim[1] != NULL) || (delim[0] == NULL)) ? delim[1] : delim[0];
 }
 
+/* Takes as an input a command, along with an args array to be
+ * filled and strips whitespace from the command, transforming
+ * it to an arguments representation, the one that execvp
+ * requires to execute a command.
+ */
 void parse_command(char *buf, char **args){
    int i=0, j=0;
    while ((buf[i] != '\0')){
@@ -56,9 +76,11 @@ void parse_command(char *buf, char **args){
    }
    args[j] = NULL;
    j = 0;
-   //while (args[j] != NULL) printf("%s\n", args[j++]);
 }
 
+/* Takes as an input a string, containing a filename, extracts
+ * the file name, stripping whitespace and returns the filename
+ */
 char* extract_filename(char* buf){
    int i=0, j;
    //search for first letter of filename, skipping the whitespace
