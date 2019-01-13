@@ -3,14 +3,48 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
-#include <fcntl.h>
 #include "execution.h"
+#include "input.h"
+
+
+void execute_line(char *input){
+   if (strcmp(input, "quit") == 0){
+      return;
+   }
+   int delim_count = split_commands(input) - 1;
+   for(int i=-1; i < delim_count; i++){
+      if(i == -1){
+         execute_command(*commands);
+      }else{
+         if ((delimiters[i] == 1 && status == 0) || delimiters[i] == 0) execute_command(commands[i+1]);
+      }
+   }
+}
+
+void execute_command(char* commands){
+   char *x = strchr(commands, '>');
+   if(x!= NULL){
+      *x = '\0';
+      parse_command(commands, args);
+      execute_output_redirect(args, extract_filename(x+1));
+      return;
+   }
+   x = strchr(commands, '<');
+   if(x!= NULL){
+      *x = '\0';
+      parse_command(commands, args);
+      execute_input_redirect(args, extract_filename(x+1));
+      return;
+   }
+   parse_command(commands, args);
+   execute(args);
+}
 
 void execute(char **args){
     int pid;
     pid = fork();
     if (pid < 0){
-        printf("error forking...");
+        printf("error forking...\n");
     }else if(pid == 0){
 
         execvp(*args, args);
@@ -26,7 +60,7 @@ void execute_input_redirect(char **args, char *filename){
     int pid;
     pid = fork();
     if (pid < 0){
-        printf("error forking...");
+        printf("error forking...\n");
     }else if(pid == 0){
         FILE *fptr;
         
@@ -47,7 +81,7 @@ void execute_output_redirect(char **args, char *filename){
     int pid;
     pid = fork();
     if (pid < 0){
-        printf("error forking...");
+        printf("error forking...\n");
     }else if(pid == 0){
     
         FILE *fptr;

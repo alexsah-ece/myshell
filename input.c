@@ -2,12 +2,6 @@
 #include <string.h>
 #include "input.h"
 
-void get_input(){
-   fgets(input, MAX_INPUT, stdin);
-   //Substitute '\n' character with NULL
-   *(strchr(input, '\n')) = '\0';
-   return;
-}
 
 int split_commands(char *buf){
    char *delim;
@@ -38,13 +32,10 @@ void add_delimiter(char c, int n){
 }
 
 char* search_delimiter(char *buf){
-   char *delim[5];
+   char *delim[2];
    delim[0] = strstr(buf, "&&");
    delim[1] = strchr(buf, ';');
-   char *first = delim[0];
-   for(int i=1; i < 2; i++)
-     if((delim[i] < first) && (delim[i] != NULL) || (first == NULL)) first = delim[i];
-   return first; 
+   return ((delim[1] < delim[0] && delim[1] != NULL) || (delim[0] == NULL)) ? delim[1] : delim[0];
 }
 
 void parse_command(char *buf, char **args){
@@ -55,19 +46,13 @@ void parse_command(char *buf, char **args){
       * that the previous argument is terminated
       * automatically.
       */
-      while ((buf[i] == ' ') || (buf[i] == '\t')){
-         buf[i++] = '\0'; 
-      }
+      while ((buf[i] == ' ') || (buf[i] == '\t')) buf[i++] = '\0'; 
       //if it is the end of string, don't save it at all
-      if(buf[i] == '\0'){
-         break;
-      }
+      if(buf[i] == '\0') break;
       //Save the argument.
       args[j++] = buf + i;
       //Skip over the argument.
-      while ((buf[i] != '\0') && (buf[i] != ' ') && (buf[i] != '\t')){
-         i++;
-      }
+      while ((buf[i] != '\0') && (buf[i] != ' ') && (buf[i] != '\t')) i++;
    }
    args[j] = NULL;
    j = 0;
