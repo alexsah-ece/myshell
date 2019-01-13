@@ -1,10 +1,10 @@
 cc = gcc
-objects = myshell.o input.o execution.o
+objects = myshell.o parse.o execution.o
 
 myshell: $(objects)
 	$(cc) -o myshell $(objects)
 
-input.o: input.h
+parse.o: parse.h
 execution.o: execution.h
 
 clean:

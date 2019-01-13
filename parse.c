@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include "input.h"
+#include "parse.h"
 
 
 int split_commands(char *buf){
