@@ -8,4 +8,4 @@ parse.o: parse.h
 execution.o: execution.h
 
 clean:
-	rm -f *.o 
+	rm -f *.o myshell
