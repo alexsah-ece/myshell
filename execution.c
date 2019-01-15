@@ -28,96 +28,68 @@ int execute_line(char *input){
 }
 
 /* Executes a single command. Input and output
- * redirection is implemented, using an extra check.
+ * redirection is implemented. If redirection is
+ * needed, the filename is passed. Else, filename
+ * is set to NULL.
  */
 void execute_command(char* commands){
-   char *x = strchr(commands, '>');
-   if(x!= NULL){
-      *x = '\0';
-      parse_command(commands, args);
-      execute_output_redirect(args, extract_filename(x+1));
-      return;
+   char *output_redirection = strchr(commands, '>');
+   char *input_redirection = strchr(commands, '<');
+   char *min;
+   if (output_redirection != NULL || input_redirection != NULL){
+      if(output_redirection < input_redirection && output_redirection != NULL){
+         min = output_redirection;
+      }else{
+         min = input_redirection;
+      }
+         //this step helps to extract the args, later on
+         *min = '\0';
+      }
+   if(output_redirection!= NULL){
+      output_redirection = extract_filename(output_redirection + 1);
    }
-   x = strchr(commands, '<');
-   if(x!= NULL){
-      *x = '\0';
-      parse_command(commands, args);
-      execute_input_redirect(args, extract_filename(x+1));
-      return;
+   if(input_redirection!= NULL){
+      input_redirection = extract_filename(input_redirection + 1);
    }
    parse_command(commands, args);
-   execute(args);
+   execute(args, input_redirection, output_redirection);
 }
 
 /* Executes a simple command, through creating
  * a child process. Syntax error detection is
  * enabled with perror() and _exit()
  */ 
-void execute(char **args){
-    int pid;
-    pid = fork();
-    if (pid < 0){
-        printf("error forking...\n");
-    }else if(pid == 0){
-
-        execvp(*args, args);
-        perror(*args);
-        _exit(1);            
-    
-    }else{
-        wait(&status);
-    }
-}
-
-/* Executes an input redirection command. 
- * Follows the logic of execute(), with the
- * exception of redirecting a command's 
- * input to a file.
- */ 
-void execute_input_redirect(char **args, char *filename){
-    int pid;
-    pid = fork();
-    if (pid < 0){
-        printf("error forking...\n");
-    }else if(pid == 0){
-        FILE *fptr;
-        
-        fptr = fopen(filename,"r");
-        dup2(fileno(fptr), STDIN_FILENO);
-        fclose(fptr);
-        
-        execvp(*args, args);
-        perror(*args);
-        _exit(1);           
-
-    }else{
-        wait(&status);
-    }
-}
-
-/* Executes an output redirection command. 
- * Follows the logic of execute(), with the
- * exception of redirecting a command's 
- * output to a file.
- */ 
-void execute_output_redirect(char **args, char *filename){
-    int pid;
-    pid = fork();
-    if (pid < 0){
-        printf("error forking...\n");
-    }else if(pid == 0){
-    
-        FILE *fptr;
-        fptr = fopen(filename,"w");
-        dup2(fileno(fptr), STDOUT_FILENO);
-        dup2(fileno(fptr), STDERR_FILENO);
-        fclose(fptr);
-
-        execvp(*args, args);
-        perror(*args);
-        _exit(1);           
-
-    }else{
-        wait(&status);
-    }
+void execute(char **args, char *input_filename, char *output_filename){
+   int pid;
+   pid = fork();
+   if (pid < 0){
+      printf("error forking...\n");
+      _exit(1);
+   }else if(pid == 0){
+      //input redirection
+      if(input_filename != (char *)NULL){
+         FILE *fptr;
+         fptr = fopen(input_filename,"r");
+         if (fptr == NULL){
+            printf("%s: No such file or directory\n", input_filename);
+            return;
+         }
+         dup2(fileno(fptr), STDIN_FILENO);
+         fclose(fptr);
+      }
+      //output redirection
+      if(output_filename != (char *)NULL){
+         FILE *fptr;
+         fptr = fopen(output_filename,"w");
+         dup2(fileno(fptr), STDOUT_FILENO);
+         dup2(fileno(fptr), STDERR_FILENO);
+         fclose(fptr);
+      }
+      //command execution
+      execvp(*args, args);
+      perror(*args);
+      _exit(1);            
+   }else{
+      wait(&status);
+   }
 }
