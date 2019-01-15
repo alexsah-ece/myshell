@@ -21,6 +21,11 @@ void run(char* filename){
          char* c = (strchr(input, '\n'));
          if (c != NULL) *c = '\0';
 
+         //check for empty input
+         if(input[0] == '\0'){
+            continue;
+         }
+
          //execute line (if quit was inserted, run() returns)
          if (execute_line(input)) return;  
       }

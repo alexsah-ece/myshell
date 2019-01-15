@@ -13,15 +13,22 @@
  * executes the commands and returns 0.
  */
 int execute_line(char *input){
-   if (strcmp(input, "quit") == 0){
-      return 1;
-   }
-   int delim_count = split_commands(input) - 1;
-   for(int i=-1; i < delim_count; i++){
-      if(i == -1){
-         execute_command(*commands);
+   int command_count = split_commands(input);
+   for(int i = 0; i < command_count; i++){
+      //execute command      
+      execute_command(commands[i]);
+      //check exit status
+      if(WIFEXITED(status)){
+         int exit_status = WEXITSTATUS(status);
+         if(exit_status == 2){
+            printf("quiting...\n");
+            return 1;
+         }
+         //skip execution of next commands, if delim is && and exit_status !=0
+         if (delimiters[i] == 1 && exit_status != 0) break;
       }else{
-         if ((delimiters[i] == 1 && status == 0) || delimiters[i] == 0) execute_command(commands[i+1]);
+         //unexpected exit
+         break;
       }
    }
    return 0;
@@ -86,6 +93,9 @@ void execute(char **args, char *input_filename, char *output_filename){
          fclose(fptr);
       }
       //command execution
+      if (args != NULL){
+         if(strcmp(*args, "quit") == 0) _exit(2);
+      }
       execvp(*args, args);
       perror(*args);
       _exit(1);            
