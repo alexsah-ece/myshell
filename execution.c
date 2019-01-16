@@ -15,8 +15,9 @@
 int execute_line(char *input){
    int command_count = split_commands(input);
    for(int i = 0; i < command_count; i++){
-      //execute command      
-      execute_command(commands[i]);
+      //execute command
+      first = 1;    
+      execute_command(commands[i], 0, 0);
       //check exit status
       if(WIFEXITED(status)){
          int exit_status = WEXITSTATUS(status);
@@ -39,17 +40,20 @@ int execute_line(char *input){
  * needed, the filename is passed. Else, filename
  * is set to NULL.
  */
-void execute_command(char* commands){
+void execute_command(char* commands, int input_pipe, int output_pipe){
    char *output_redirection = strchr(commands, '>');
    char *input_redirection = strchr(commands, '<');
    char *pipe = strchr(commands, '|');
    char *min;
    if(pipe != NULL){
       *pipe = '\0';
-      parse_command(commands, args);
-      execute(args, '\0', "temp");
-      parse_command(pipe + 1, args);
-      execute(args, "temp", '\0');
+      if(first){
+         execute_command(commands, 0, 1);
+         first = !first;
+      }else{
+         execute_command(commands, 1, 1);
+      }
+      execute_command(pipe + 1, 1, 0);
       return;
    }
    if (output_redirection != NULL || input_redirection != NULL){
@@ -67,8 +71,29 @@ void execute_command(char* commands){
    if(input_redirection!= NULL){
       input_redirection = extract_filename(input_redirection + 1);
    }
+   if(input_pipe){
+      input_redirection = "in_temp";
+   }
+   if(output_pipe){
+      output_redirection = "out_temp";
+   }
    parse_command(commands, args);
    execute(args, input_redirection, output_redirection);
+   //write output to the in_temp file, for the next command to use
+   if(output_pipe){
+      FILE *fptr_out, *fptr_in;
+      char ch;
+
+      fptr_out = fopen("out_temp","r");
+      fptr_in = fopen("in_temp", "w");
+
+      while((ch = fgetc(fptr_out)) != EOF){
+         //printf("%c", ch);
+         fputc (ch, fptr_in);
+      }
+      fclose(fptr_in);
+      fclose(fptr_out);
+   }
 }
 
 /* Executes a simple command, through creating
