@@ -25,7 +25,7 @@ int execute_line(char *input){
             return 1;
          }
          //skip execution of next commands, if delim is && and exit_status !=0
-         if (delimiters[i] == 1 && exit_status != 0) break;
+         if (delimiters[i] == '&' && exit_status != 0) break;
       }else{
          //unexpected exit
          break;
@@ -44,14 +44,14 @@ void execute_command(char* commands){
    char *input_redirection = strchr(commands, '<');
    char *min;
    if (output_redirection != NULL || input_redirection != NULL){
-      if(output_redirection < input_redirection && output_redirection != NULL){
+      if((output_redirection < input_redirection && output_redirection != NULL) || input_redirection == NULL){
          min = output_redirection;
       }else{
          min = input_redirection;
       }
          //this step helps to extract the args, later on
          *min = '\0';
-      }
+   }
    if(output_redirection!= NULL){
       output_redirection = extract_filename(output_redirection + 1);
    }

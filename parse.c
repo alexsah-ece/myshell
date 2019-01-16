@@ -15,7 +15,7 @@ int split_commands(char *buf){
    int i = 1;
    delim = search_delimiter(buf);
    while (delim != NULL){
-      add_delimiter(*delim, i-1);
+      delimiters[i-1] = *delim;
 
       //split the command, using null character.
       if (*delim == '&') *delim++ = '\0';
@@ -25,21 +25,6 @@ int split_commands(char *buf){
       delim = search_delimiter(delim);
    }
    return i;
-}
-
-/* Adds a delimiter to the delimiters[512] array
- */
-void add_delimiter(char c, int n){
-   enum delimiter delim;
-   switch(c){
-      case '&':
-         delim = AMBERSAND;
-         break;
-      case ';':
-         delim = SEMICOLON;
-         break;
-   }
-   delimiters[n] = delim;
 }
 
 /* Searches for the ";" and "&&" delimiters, in a given
@@ -75,7 +60,6 @@ void parse_command(char *buf, char **args){
       while ((buf[i] != '\0') && (buf[i] != ' ') && (buf[i] != '\t')) i++;
    }
    args[j] = NULL;
-   j = 0;
 }
 
 /* Takes as an input a string, containing a filename, extracts
