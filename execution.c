@@ -42,7 +42,16 @@ int execute_line(char *input){
 void execute_command(char* commands){
    char *output_redirection = strchr(commands, '>');
    char *input_redirection = strchr(commands, '<');
+   char *pipe = strchr(commands, '|');
    char *min;
+   if(pipe != NULL){
+      *pipe = '\0';
+      parse_command(commands, args);
+      execute(args, '\0', "temp");
+      parse_command(pipe + 1, args);
+      execute(args, "temp", '\0');
+      return;
+   }
    if (output_redirection != NULL || input_redirection != NULL){
       if((output_redirection < input_redirection && output_redirection != NULL) || input_redirection == NULL){
          min = output_redirection;
