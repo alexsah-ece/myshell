@@ -7,10 +7,9 @@
 #include "parse.h"
 
 
-/* Executes a line consisting of commands,
- * seperated by ";" and "&&". If "quit" was
- * inserted, it returns 1. Otherwise, it
- * executes the commands and returns 0.
+/* Executes a line, consisting of commands, seperated by ";" 
+ * and "&&". If "quit" was inserted, it returns 1. 
+ * Otherwise, it executes the commands and returns 0.
  */
 int execute_line(char *input){
    int command_count = split_commands(input);
@@ -19,26 +18,26 @@ int execute_line(char *input){
       first = 1;    
       execute_command(commands[i], 0, 0);
       //check exit status
-      if(WIFEXITED(status)){
-         int exit_status = WEXITSTATUS(status);
-         if(exit_status == 2){
+      if(status >= 0){
+         if(status == 2){
             printf("quiting...\n");
             return 1;
          }
          //skip execution of next commands, if delim is && and exit_status !=0
-         if (delimiters[i] == '&' && exit_status != 0) break;
+         if (delimiters[i] == '&' && status != 0) break;
       }else{
          //unexpected exit
+         printf("unexpected error\n");
          break;
       }
    }
    return 0;
 }
 
-/* Executes a single command. Input and output
- * redirection is implemented. If redirection is
- * needed, the filename is passed. Else, filename
- * is set to NULL.
+/* Executes a single command. Input and output redirection is implemented,
+ * as well as multiple pipes. If redirection is  needed, the filename is passed. 
+ * Else, filename is set to NULL. Piping is implemented with the use of temp files
+ * using the flags input_pipe and output_pipe.
  */
 void execute_command(char* commands, int input_pipe, int output_pipe){
    char *output_redirection = strchr(commands, '>');
@@ -96,44 +95,69 @@ void execute_command(char* commands, int input_pipe, int output_pipe){
    }
 }
 
-/* Executes a simple command, through creating
- * a child process. Syntax error detection is
- * enabled with perror() and _exit()
+/* After checking for built-in commands, executes a simple command, 
+ * through creating a child process. Syntax error detection is enabled 
+ * with perror() and _exit().
  */ 
 void execute(char **args, char *input_filename, char *output_filename){
-   int pid;
-   pid = fork();
+   //Check if built-in command. If so, execute it and return. 
+   if(execute_built_in(args)){
+      return;
+   }
+   int pid = fork();
    if (pid < 0){
       printf("error forking...\n");
       _exit(1);
-   }else if(pid == 0){
-      //input redirection
-      if(input_filename != (char *)NULL){
-         FILE *fptr;
-         fptr = fopen(input_filename,"r");
-         if (fptr == NULL){
-            printf("%s: No such file or directory\n", input_filename);
-            return;
-         }
-         dup2(fileno(fptr), STDIN_FILENO);
-         fclose(fptr);
-      }
-      //output redirection
-      if(output_filename != (char *)NULL){
-         FILE *fptr;
-         fptr = fopen(output_filename,"w");
-         dup2(fileno(fptr), STDOUT_FILENO);
-         dup2(fileno(fptr), STDERR_FILENO);
-         fclose(fptr);
-      }
-      //command execution
-      if (args != NULL){
-         if(strcmp(*args, "quit") == 0) _exit(2);
-      }
+   }else if(pid == 0){   
+      input_redirect(input_filename);
+      output_redirect(output_filename);
       execvp(*args, args);
       perror(*args);
       _exit(1);            
    }else{
       wait(&status);
+      if(WIFEXITED(status)){
+         status = WEXITSTATUS(status);
+      }else{
+         status = -1;
+      }
+   }
+}
+
+int execute_built_in(char **args){
+   status = -1;
+   if (strcmp(*args, "quit") == 0){
+      status = 2;
+   }else if(strcmp(*args, "cd") == 0){
+      if(chdir(args[1])!=0){
+         perror("cd");
+         status = 1;
+      }else{
+         status = 0;
+      }
+   }
+   return (status == -1)? 0: 1;
+}
+
+void input_redirect(char *input_filename){
+   if(input_filename != NULL){
+      FILE *fptr;
+      fptr = fopen(input_filename,"r");
+      if (fptr == NULL){
+         printf("%s: No such file or directory\n", input_filename);
+         _exit(1);
+      }
+      dup2(fileno(fptr), STDIN_FILENO);
+      fclose(fptr);
+   }
+}
+
+void output_redirect(char *output_filename){
+   if(output_filename != NULL){
+      FILE *fptr;
+      fptr = fopen(output_filename,"w");
+      dup2(fileno(fptr), STDOUT_FILENO);
+      dup2(fileno(fptr), STDERR_FILENO);
+      fclose(fptr);
    }
 }
