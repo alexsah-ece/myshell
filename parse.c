@@ -77,3 +77,13 @@ char* extract_filename(char* buf){
    buf[i] = '\0';
    return (buf + j);
 }
+
+int split_pipes(char** piped_commands, char *buf){
+   int i = 0;
+   char *token = strtok(buf, "|");
+   while(token != NULL){
+      piped_commands[i++] = token;
+      token = strtok(NULL, "|");
+   }
+   return i-1;
+}

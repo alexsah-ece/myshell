@@ -12,11 +12,10 @@
  * Otherwise, it executes the commands and returns 0.
  */
 int execute_line(char *input){
-   int command_count = split_commands(input);
-   for(int i = 0; i < command_count; i++){
-      //execute command
-      first = 1;    
-      execute_command(commands[i], 0, 0);
+   int j = split_commands(input);
+   for(int i = 0; i < j; i++){
+      //execute command  
+      execute_command(commands[i]);
       //check exit status
       if(status >= 0){
          if(status == 2){
@@ -34,97 +33,72 @@ int execute_line(char *input){
    return 0;
 }
 
-/* Executes a single command. Input and output redirection is implemented,
- * as well as multiple pipes. If redirection is  needed, the filename is passed. 
- * Else, filename is set to NULL. Piping is implemented with the use of temp files
- * using the flags input_pipe and output_pipe.
+/* Takes a command an an input, which might contain a pipe. It handles the pipes
+ * occured, executing the commands.
  */
-void execute_command(char* commands, int input_pipe, int output_pipe){
-   char *output_redirection = strchr(commands, '>');
-   char *input_redirection = strchr(commands, '<');
-   char *pipe = strchr(commands, '|');
-   char *min;
-   if(pipe != NULL){
-      *pipe = '\0';
-      if(first){
-         execute_command(commands, 0, 1);
-         first = !first;
-      }else{
-         execute_command(commands, 1, 1);
-      }
-      execute_command(pipe + 1, 1, 0);
-      return;
-   }
-   if (output_redirection != NULL || input_redirection != NULL){
-      if((output_redirection < input_redirection && output_redirection != NULL) || input_redirection == NULL){
-         min = output_redirection;
-      }else{
-         min = input_redirection;
-      }
-         //this step helps to extract the args, later on
-         *min = '\0';
-   }
-   if(output_redirection!= NULL){
-      output_redirection = extract_filename(output_redirection + 1);
-   }
-   if(input_redirection!= NULL){
-      input_redirection = extract_filename(input_redirection + 1);
-   }
-   if(input_pipe){
-      input_redirection = "in_temp";
-   }
-   if(output_pipe){
-      output_redirection = "out_temp";
-   }
-   parse_command(commands, args);
-   execute(args, input_redirection, output_redirection);
-   //write output to the in_temp file, for the next command to use
-   if(output_pipe){
-      FILE *fptr_out, *fptr_in;
-      char ch;
+void execute_command(char *cmd){
+   int pipe_count, cmd_count, pid, input_pipe, output_pipe;
+   pipe_count = split_pipes(piped_commands, cmd);
+   cmd_count = pipe_count + 1;
+   int pd[pipe_count*2];
 
-      fptr_out = fopen("out_temp","r");
-      fptr_in = fopen("in_temp", "w");
-
-      while((ch = fgetc(fptr_out)) != EOF){
-         //printf("%c", ch);
-         fputc (ch, fptr_in);
+   //creating all necessary pipes
+   for(int i=0; i < pipe_count*2; i++){
+      if(pipe(pd + i*2) < 0){
+         perror("pipe");
+         status = -1;
+         return;
       }
-      fclose(fptr_in);
-      fclose(fptr_out);
    }
-}
 
-/* After checking for built-in commands, executes a simple command, 
- * through creating a child process. Syntax error detection is enabled 
- * with perror() and _exit().
- */ 
-void execute(char **args, char *input_filename, char *output_filename){
-   //Check if built-in command. If so, execute it and return. 
-   if(execute_built_in(args)){
-      return;
-   }
-   int pid = fork();
-   if (pid < 0){
-      printf("error forking...\n");
-      _exit(1);
-   }else if(pid == 0){   
-      input_redirect(input_filename);
-      output_redirect(output_filename);
-      execvp(*args, args);
-      perror(*args);
-      _exit(1);            
-   }else{
-      wait(&status);
-      if(WIFEXITED(status)){
-         status = WEXITSTATUS(status);
+   int j = 0;
+   while(j < cmd_count){
+      //double parsing on the same string leads to bug, so strdup is used
+      if(execute_built_in(strdup(piped_commands[j]))){
+         j++;
+         continue;
+      }
+      pid = fork();
+      if(pid == 0){
+         input_pipe = 0; output_pipe = 0;
+         if(j != 0){
+            //if not first, get input from previous
+            if(dup2(pd[(j-1) * 2], STDIN_FILENO) < 0){
+               perror("dup2");
+               _exit(1);
+            };
+            input_pipe = 1;
+         }
+         if(j != cmd_count - 1){
+            //if not last command, pipe the output
+            if(dup2(pd[j*2 + 1], 1) < 0){
+               perror("dup2");
+               exit(1);
+            }
+            output_pipe = 1;
+         }
+         //close all pipes in child
+         for(int i = 0; i < pipe_count*2; i++){
+            close(pd[i]);
+         }
+         execute(piped_commands[j], input_pipe, output_pipe);
+      }else if(pid > 0){
+         close(pd[(j-1) * 2]);
+         close(pd[j*2 + 1]);
+         wait(&status);
+         status = (WIFEXITED(status)) ? WEXITSTATUS(status) : -1;
+            j++;
       }else{
+         perror("fork");
          status = -1;
       }
    }
 }
 
-int execute_built_in(char **args){
+/* Executes built-in commands, the ones not supported natively by execvp.
+ */
+int execute_built_in(char *cmd){
+   parse_command(cmd, args);
    status = -1;
    if (strcmp(*args, "quit") == 0){
       status = 2;
@@ -139,6 +113,35 @@ int execute_built_in(char **args){
    return (status == -1)? 0: 1;
 }
 
+/* Executes a single command. Input and output redirection is implemented.
+ * If redirection is  needed, the filename is passed. Else, filename is set 
+ * to NULL. Input and output redirection is permitted if the command doesn't 
+ * belong to a pipe where it redirects its intput and output correspondingly. 
+ * This information is passed to input_pipe and output_pipe function args.
+ */
+void execute(char* command, int input_pipe, int output_pipe){
+   char *output_redirection = strchr(command, '>');
+   char *input_redirection = strchr(command, '<');
+
+   if(output_redirection != NULL && output_pipe == 0){
+      *output_redirection = '\0';
+      output_redirection = extract_filename(output_redirection + 1);
+      output_redirect(output_redirection);
+   }
+   if(input_redirection != NULL && input_pipe == 0){
+      *input_redirection = '\0';
+      input_redirection = extract_filename(input_redirection + 1);
+      input_redirect(input_redirection);
+
+   }
+   parse_command(command, args);
+   execvp(*args, args);
+   perror(*args);
+   _exit(1);   
+}
+
+/* Redirects input to the given filename.
+ */
 void input_redirect(char *input_filename){
    if(input_filename != NULL){
       FILE *fptr;
@@ -152,6 +155,8 @@ void input_redirect(char *input_filename){
    }
 }
 
+/* Redirects output to the given filename.
+ */
 void output_redirect(char *output_filename){
    if(output_filename != NULL){
       FILE *fptr;
