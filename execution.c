@@ -131,13 +131,23 @@ int execute_built_in(char *cmd){
  */
 void execute(char* command, int input_pipe, int output_pipe){
    char *output_redirection = strchr(command, '>');
+   char *output_redirection_append = strstr(command, ">>");
    char *input_redirection = strchr(command, '<');
 
-   if(output_redirection != NULL && output_pipe == 0){
-      *output_redirection = '\0';
-      output_redirection = extract_filename(output_redirection + 1);
-      output_redirect(output_redirection);
+   //output redirect: write or append to file
+   if(output_pipe == 0 && (output_redirection != NULL || output_redirection_append != NULL)){
+      if(output_redirection == NULL || (output_redirection_append <= output_redirection\
+                                        && output_redirection_append != NULL)){
+         *output_redirection_append++ = '\0'; //++ because we want to skip ">>"
+         output_redirection_append = extract_filename(output_redirection_append + 1);
+         output_redirect(output_redirection_append, "a");
+      }else{
+         *output_redirection = '\0';
+         output_redirection = extract_filename(output_redirection + 1);
+         output_redirect(output_redirection, "w");
+      }
    }
+   //input redirect
    if(input_redirection != NULL && input_pipe == 0){
       *input_redirection = '\0';
       input_redirection = extract_filename(input_redirection + 1);
@@ -165,12 +175,13 @@ void input_redirect(char *input_filename){
    }
 }
 
-/* Redirects output to the given filename.
+/* Redirects output to the given filename. Depending on the mode, output
+ * can be written to the file, or, appended.
  */
-void output_redirect(char *output_filename){
+void output_redirect(char *output_filename, char *mode){
    if(output_filename != NULL){
       FILE *fptr;
-      fptr = fopen(output_filename,"w");
+      fptr = fopen(output_filename,mode);
       dup2(fileno(fptr), STDOUT_FILENO);
       dup2(fileno(fptr), STDERR_FILENO);
       fclose(fptr);

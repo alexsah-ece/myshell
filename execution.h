@@ -9,6 +9,6 @@ void execute_command(char*);
 void execute(char *, int, int);
 int execute_built_in(char*);
 void input_redirect(char *);
-void output_redirect(char *);
+void output_redirect(char *, char *mode);
 
 #endif
