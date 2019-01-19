@@ -19,7 +19,7 @@ int execute_line(char *input){
       execute_command(commands[i]);
       //check exit status
       if(status >= 0){
-         if(status == 2){
+         if(status == 5){
             printf("quiting...\n");
             return 1;
          }
@@ -116,7 +116,7 @@ int execute_built_in(char *cmd){
    parse_command(cmd, args);
    status = -1;
    if (strcmp(*args, "quit") == 0){
-      status = 2;
+      status = 5;
    }else if(strcmp(*args, "cd") == 0){
       if(chdir(args[1])!=0){
          perror("cd");
