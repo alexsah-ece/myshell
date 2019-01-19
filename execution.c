@@ -22,6 +22,10 @@ int execute_line(char *input){
             printf("quiting...\n");
             return 1;
          }
+         if(status == 3){
+            printf("syntax: syntax error\n");
+            break;
+         }
          //skip execution of next commands, if delim is && and exit_status !=0
          if (delimiters[i] == '&' && status != 0) break;
       }else{
@@ -40,13 +44,19 @@ void execute_command(char *cmd){
    int pipe_count, cmd_count, pid, input_pipe, output_pipe;
    pipe_count = split_pipes(piped_commands, cmd);
    cmd_count = pipe_count + 1;
+
+   //check for empty command insertion, while delimiters have been inserted
+   if(cmd_count == 0){
+      status = 3;
+      return;
+   }
    int pd[pipe_count*2];
 
    //creating all necessary pipes
    for(int i=0; i < pipe_count*2; i++){
       if(pipe(pd + i*2) < 0){
          perror("pipe");
-         status = -1;
+         status = 1;
          return;
       }
    }
@@ -73,7 +83,7 @@ void execute_command(char *cmd){
             //if not last command, pipe the output
             if(dup2(pd[j*2 + 1], 1) < 0){
                perror("dup2");
-               exit(1);
+               _exit(1);
             }
             output_pipe = 1;
          }
@@ -90,7 +100,7 @@ void execute_command(char *cmd){
             j++;
       }else{
          perror("fork");
-         status = -1;
+         status = 1;
       }
    }
 }
