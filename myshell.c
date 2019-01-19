@@ -11,7 +11,7 @@ char input[512];
  * with the help of execut_line()
  */
 void run(char* filename){
-   if (filename == '\0'){
+   if (filename == NULL){
       //interactive mode
       while(1){
          printf("sahinis_8906> ");
@@ -49,7 +49,7 @@ void run(char* filename){
 int main(int argc, char **argv){
 
    char *filename;
-   filename = (argc > 0) ? argv[1]:'\0';
+   filename = (argc > 0) ? argv[1] : NULL;
    run(filename);
    return 0;
 }
