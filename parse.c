@@ -2,6 +2,9 @@
 #include <string.h>
 #include "parse.h"
 
+#define true 1
+#define false 0
+
 
 /* Takes as input a char buffer and splits
  * it to one or more commands, based on the
@@ -89,4 +92,19 @@ int split_pipes(char** piped_commands, char *buf){
       token = strtok(NULL, "|");
    }
    return i-1;
+}
+
+/* Checks if the given commands are non empty and thus, considered valid.
+ */
+int is_valid(char** piped_commands, int cmd_count){
+	char *cmd;
+	int valid = (cmd_count <= 0) ? false : true;
+	for(int i=0; i < cmd_count; i++){
+		cmd = strdup(piped_commands[i]);
+        parse_command(cmd, args);
+        if(args[0] == NULL){
+            valid = false;
+         }
+	}
+	return valid;
 }

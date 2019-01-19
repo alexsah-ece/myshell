@@ -11,5 +11,6 @@ char* search_delimiter(char *);
 void parse_command(char *, char **);
 char* extract_filename(char*);
 int split_pipes(char**, char *);
+int is_valid(char**, int);
 
 #endif

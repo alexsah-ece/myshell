@@ -15,7 +15,7 @@
 int execute_line(char *input){
    int j = split_commands(input);
    for(int i = 0; i < j; i++){
-      //execute command  
+      //execute command
       execute_command(commands[i]);
       //check exit status
       if(status >= 0){
@@ -27,6 +27,7 @@ int execute_line(char *input){
             printf("syntax: syntax error\n");
             break;
          }
+         //printf("STATUS: %d\n", status);
          //skip execution of next commands, if delim is && and exit_status !=0
          if (delimiters[i] == '&' && status != 0) break;
       }else{
@@ -46,13 +47,12 @@ void execute_command(char *cmd){
    pipe_count = split_pipes(piped_commands, cmd);
    cmd_count = pipe_count + 1;
 
-   //check for empty command insertion, while delimiters have been inserted
-   if(cmd_count == 0){
+   if(is_valid(piped_commands, cmd_count) == 0){
       status = 3;
       return;
    }
-   int pd[pipe_count*2];
 
+   int pd[pipe_count*2];
    //creating all necessary pipes
    for(int i=0; i < pipe_count*2; i++){
       if(pipe(pd + i*2) < 0){
@@ -64,6 +64,9 @@ void execute_command(char *cmd){
 
    int j = 0;
    while(j < cmd_count){
+      /*
+      
+      */
       //double parsing on the same string leads to bug, so strdup is used
       if(execute_built_in(strdup(piped_commands[j]))){
          j++;
@@ -98,7 +101,8 @@ void execute_command(char *cmd){
          close(pd[j*2 + 1]);
          wait(&status);
          status = (WIFEXITED(status)) ? WEXITSTATUS(status) : -1;
-            j++;
+         if(status != 0) return;
+         j++;
       }else{
          perror("fork");
          status = 1;
