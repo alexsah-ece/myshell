@@ -13,16 +13,14 @@ char input[512];
 void run(char* filename){
    if (filename == NULL){
       //interactive mode
-      while(1){
-         printf("sahinis_8906> ");
-         fgets(input, MAX_INPUT, stdin);
-         //Substitute '\n' character with NULL
-         char* c = (strchr(input, '\n'));
-         if (c != NULL) *c = '\0';
-         //check for empty input
-         if(input[0] == '\0') continue;
-         //execute line (if quit was inserted, run() returns)
-         if (execute_line(input)) return;  
+     while(1){
+		printf("sahinis_8906> ");
+		fgets(input, MAX_INPUT, stdin);
+		//Substitute '\n' character with NULL
+		char* c = (strchr(input, '\n'));
+		if (c != NULL) *c = '\0';
+		//execute line (if quit was inserted, run() returns)
+		if (execute_line(input)) return;  
       }
    }else{
       //batch mode

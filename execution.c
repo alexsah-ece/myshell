@@ -13,6 +13,11 @@
  * Otherwise, it executes the commands and returns 0.
  */
 int execute_line(char *input){
+   //check for empty line
+   char *c = strdup(input);
+   parse_command(c, args);
+   if(args[0] == NULL) return 0;
+   
    int j = split_commands(input);
    for(int i = 0; i < j; i++){
       //execute command
@@ -28,8 +33,8 @@ int execute_line(char *input){
             break;
          }
          //printf("STATUS: %d\n", status);
-         //skip execution of next commands, if delim is && and exit_status !=0
-         if (delimiters[i] == '&' && status != 0) break;
+         //skip execution of next command, if delim is && and exit_status !=0
+         if (delimiters[i] == '&' && status != 0) i++;
       }else{
          //unexpected exit
          printf("unexpected error\n");
