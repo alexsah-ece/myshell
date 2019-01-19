@@ -78,6 +78,9 @@ char* extract_filename(char* buf){
    return (buf + j);
 }
 
+/* Splits buf based on '|' operator and stores the tokens in piped_commands.
+ * The function returns the number of pipes that exist into buf.
+ */
 int split_pipes(char** piped_commands, char *buf){
    int i = 0;
    char *token = strtok(buf, "|");
